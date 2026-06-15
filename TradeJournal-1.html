@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Trade Journal</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0D1117;color:#C9D1D9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;font-size:14px}
+input,select,textarea,button{font-family:inherit}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#F0B429!important}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:#161B22}
+::-webkit-scrollbar-thumb{background:#30363D;border-radius:3px}
+.wrap{padding:18px 14px;max-width:1100px;margin:0 auto}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px}
+.tab{padding:7px 13px;font-size:12px;font-weight:600;cursor:pointer;border:none;border-radius:6px;white-space:nowrap;background:transparent;color:#8B949E;transition:all .15s}
+.tab.active{background:#F0B429;color:#0D1117}
+.cards{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.card{background:#161B22;border:1px solid #21262D;border-radius:8px;padding:14px 16px;min-width:110px;flex:1}
+.card-label{color:#8B949E;font-size:10px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}
+.card-val{font-family:'Courier New',monospace;font-size:20px;font-weight:700}
+.card-sub{color:#8B949E;font-size:10px;margin-top:3px}
+.panel{background:#161B22;border:1px solid #21262D;border-radius:10px;padding:18px;margin-bottom:14px}
+.panel-title{color:#F0B429;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px}
+.inp{background:#0D1117;border:1px solid #30363D;border-radius:6px;color:#C9D1D9;padding:8px 11px;font-size:13px;width:100%}
+.lbl{color:#8B949E;font-size:10px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;display:block}
+.grid{display:grid;gap:10px}
+.btn{background:#F0B429;border:none;color:#0D1117;border-radius:6px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer}
+.btn-o{background:transparent;border:1px solid #F0B429;color:#F0B429;border-radius:6px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer}
+.btn-r{background:transparent;border:1px solid #F87171;color:#F87171;border-radius:6px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer}
+.btn-g{background:transparent;border:1px solid #4ADE80;color:#4ADE80;border-radius:6px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer}
+.badge{border-radius:4px;padding:2px 8px;font-size:10px;font-weight:700;display:inline-block}
+table{width:100%;border-collapse:collapse}
+th{padding:9px 10px;text-align:left;color:#8B949E;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;white-space:nowrap;background:#0D1117}
+td{padding:8px 10px}
+tr.trow{cursor:pointer;border-bottom:1px solid #21262D}
+tr.trow:hover{background:#1C2128}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:#161B22;border:1px solid #30363D;border-radius:12px;width:100%;max-width:420px;padding:24px}
+.toggle-wrap{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #21262D}
+.toggle{width:42px;height:23px;border-radius:12px;cursor:pointer;position:relative;transition:background .2s}
+.toggle-dot{position:absolute;top:3px;width:17px;height:17px;border-radius:50%;background:#0D1117;transition:left .2s}
+.psych-stars{display:flex;gap:3px;align-items:center}
+.psych-btn{background:none;border:none;cursor:pointer;font-size:17px;padding:2px}
+.ai-box{background:#0D1117;border:1px solid #F0B429;border-radius:8px;padding:18px;margin-top:14px}
+.ai-title{color:#F0B429;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+.ai-text{color:#C9D1D9;font-size:13px;line-height:1.7;white-space:pre-wrap}
+.chart-wrap{width:100%;overflow:hidden}
+svg text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.exp-row{background:#0D1117;border-bottom:1px solid #21262D}
+.exp-cell{padding:12px 16px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+// ── Constants ────────────────────────────────────────────────────────────────
+const SEED=[
+  {id:1329834355,date:"2026-05-06",eT:"07:10",cT:"07:30",type:"buy", sym:"GBPJPY",lots:0.01,eP:212.672, cP:212.707, pnl:0.22,  comm:-0.07,exit:"user",psych:3,tv:"",notes:""},
+  {id:1329979043,date:"2026-05-06",eT:"11:20",cT:"11:48",type:"sell",sym:"XAUUSD",lots:0.01,eP:4698.907,cP:4698.987,pnl:-0.08, comm:-0.07,exit:"user",psych:2,tv:"",notes:""},
+  {id:1330027611,date:"2026-05-06",eT:"12:30",cT:"12:55",type:"sell",sym:"XAUUSD",lots:0.02,eP:4678.845,cP:4679.985,pnl:-2.28, comm:-0.14,exit:"user",psych:2,tv:"",notes:""},
+  {id:1330042877,date:"2026-05-06",eT:"12:55",cT:"13:09",type:"sell",sym:"XAUUSD",lots:0.01,eP:4672.542,cP:4671.651,pnl:0.89,  comm:-0.07,exit:"user",psych:4,tv:"",notes:""},
+  {id:1330087391,date:"2026-05-06",eT:"13:45",cT:"14:10",type:"buy", sym:"XAUUSD",lots:0.01,eP:4703.937,cP:4708.338,pnl:4.40,  comm:-0.07,exit:"user",psych:5,tv:"",notes:""},
+  {id:1330390606,date:"2026-05-07",eT:"07:20",cT:"07:43",type:"buy", sym:"XAUUSD",lots:0.02,eP:4741.198,cP:4741.771,pnl:1.14,  comm:-0.14,exit:"user",psych:3,tv:"",notes:""},
+  {id:1330392477,date:"2026-05-07",eT:"07:40",cT:"07:51",type:"sell",sym:"XAUUSD",lots:0.02,eP:4738.068,cP:4741.156,pnl:-6.17, comm:-0.14,exit:"user",psych:1,tv:"",notes:"Revenge trade"},
+  {id:1330399178,date:"2026-05-07",eT:"07:55",cT:"08:05",type:"buy", sym:"XAUUSD",lots:0.02,eP:4751.240,cP:4749.443,pnl:-3.59, comm:-0.14,exit:"user",psych:2,tv:"",notes:""},
+  {id:1330400064,date:"2026-05-07",eT:"08:02",cT:"08:07",type:"buy", sym:"XAUUSD",lots:0.02,eP:4751.945,cP:4750.763,pnl:-2.36, comm:-0.14,exit:"user",psych:1,tv:"",notes:""},
+  {id:1330624738,date:"2026-05-08",eT:"09:00",cT:"11:20",type:"sell",sym:"XAUUSD",lots:0.01,eP:4780.000,cP:4776.500,pnl:3.50,  comm:-0.07,exit:"tp",  psych:5,tv:"",notes:""},
+  {id:1330624739,date:"2026-05-08",eT:"11:25",cT:"12:10",type:"buy", sym:"XAUUSD",lots:0.01,eP:4780.000,cP:4779.240,pnl:-0.76, comm:-0.07,exit:"user",psych:3,tv:"",notes:""},
+  {id:1330900001,date:"2026-05-11",eT:"08:30",cT:"09:45",type:"sell",sym:"XAUUSD",lots:0.01,eP:4800.000,cP:4797.400,pnl:2.60,  comm:-0.07,exit:"user",psych:4,tv:"",notes:""},
+  {id:1330900002,date:"2026-05-11",eT:"10:00",cT:"10:30",type:"buy", sym:"XAUUSD",lots:0.01,eP:4805.000,cP:4803.990,pnl:-1.00, comm:-0.07,exit:"sl",  psych:3,tv:"",notes:""},
+  {id:1331200001,date:"2026-05-12",eT:"08:00",cT:"09:10",type:"sell",sym:"XAUUSD",lots:0.02,eP:4810.000,cP:4814.000,pnl:-8.00, comm:-0.14,exit:"sl",  psych:2,tv:"",notes:""},
+  {id:1331200002,date:"2026-05-12",eT:"09:20",cT:"09:55",type:"buy", sym:"XAUUSD",lots:0.01,eP:4815.000,cP:4815.500,pnl:0.50,  comm:-0.07,exit:"user",psych:3,tv:"",notes:""},
+  {id:1331500001,date:"2026-05-13",eT:"08:15",cT:"09:00",type:"sell",sym:"XAUUSD",lots:0.05,eP:4820.000,cP:4826.000,pnl:-30.00,comm:-0.35,exit:"sl",  psych:1,tv:"",notes:"Oversized position"},
+  {id:1331500002,date:"2026-05-13",eT:"09:10",cT:"10:00",type:"buy", sym:"XAUUSD",lots:0.02,eP:4826.000,cP:4830.000,pnl:8.00,  comm:-0.14,exit:"user",psych:4,tv:"",notes:""},
+  {id:1331500004,date:"2026-05-13",eT:"11:00",cT:"12:30",type:"buy", sym:"XAUUSD",lots:0.02,eP:4830.000,cP:4831.870,pnl:3.74,  comm:-0.49,exit:"tp",  psych:5,tv:"",notes:""},
+  {id:1331800001,date:"2026-05-14",eT:"09:00",cT:"14:20",type:"buy", sym:"XAUUSD",lots:0.02,eP:4840.000,cP:4847.850,pnl:15.70, comm:-0.28,exit:"tp",  psych:5,tv:"",notes:"Perfect patience"},
+  {id:1332100001,date:"2026-05-15",eT:"08:45",cT:"11:00",type:"sell",sym:"XAUUSD",lots:0.01,eP:4845.000,cP:4835.830,pnl:9.17,  comm:-0.14,exit:"tp",  psych:5,tv:"",notes:""},
+  {id:1333500001,date:"2026-05-19",eT:"08:00",cT:"09:30",type:"buy", sym:"XAUUSD",lots:0.03,eP:4850.000,cP:4843.670,pnl:-19.00,comm:-0.21,exit:"sl",  psych:2,tv:"",notes:""},
+  {id:1333800001,date:"2026-05-20",eT:"08:30",cT:"09:20",type:"sell",sym:"XAUUSD",lots:0.01,eP:4840.000,cP:4841.810,pnl:-1.81, comm:-0.21,exit:"user",psych:3,tv:"",notes:""},
+  {id:1334100001,date:"2026-05-21",eT:"08:00",cT:"10:30",type:"buy", sym:"XAUUSD",lots:0.05,eP:4840.000,cP:4842.260,pnl:11.30, comm:-0.14,exit:"user",psych:4,tv:"",notes:""},
+  {id:1334400001,date:"2026-05-22",eT:"08:30",cT:"12:00",type:"sell",sym:"XAUUSD",lots:0.03,eP:4850.000,cP:4842.600,pnl:22.20, comm:-0.21,exit:"tp",  psych:5,tv:"",notes:""},
+  {id:1334400002,date:"2026-05-22",eT:"12:10",cT:"13:00",type:"buy", sym:"XAUUSD",lots:0.01,eP:4843.000,cP:4845.550,pnl:2.55,  comm:-0.07,exit:"user",psych:4,tv:"",notes:""},
+  {id:1335000001,date:"2026-05-25",eT:"08:00",cT:"09:00",type:"buy", sym:"XAUUSD",lots:0.05,eP:4830.000,cP:4826.716,pnl:-16.42,comm:-0.42,exit:"sl",  psych:1,tv:"",notes:""},
+  {id:1335600007,date:"2026-05-26",eT:"10:35",cT:"11:10",type:"sell",sym:"XAUUSD",lots:0.03,eP:4822.000,cP:4820.500,pnl:4.50,  comm:-0.21,exit:"user",psych:4,tv:"",notes:""},
+  {id:1335600008,date:"2026-05-26",eT:"11:20",cT:"12:00",type:"buy", sym:"XAUUSD",lots:0.03,eP:4820.000,cP:4817.500,pnl:-7.50, comm:-0.35,exit:"user",psych:2,tv:"",notes:""},
+  {id:1335900001,date:"2026-05-27",eT:"08:30",cT:"09:15",type:"sell",sym:"XAUUSD",lots:0.02,eP:4815.000,cP:4820.260,pnl:-10.52,comm:-0.28,exit:"sl",  psych:1,tv:"",notes:""},
+  {id:1336200001,date:"2026-05-28",eT:"08:00",cT:"08:30",type:"buy", sym:"XAUUSD",lots:0.01,eP:4820.000,cP:4820.580,pnl:0.58,  comm:-0.14,exit:"user",psych:3,tv:"",notes:""},
+  {id:1336200009,date:"2026-05-28",eT:"11:55",cT:"12:15",type:"buy", sym:"XAUUSD",lots:0.01,eP:4820.000,cP:4819.000,pnl:-1.00, comm:-0.14,exit:"user",psych:1,tv:"",notes:"Overtrading"},
+  {id:1336200010,date:"2026-05-28",eT:"12:20",cT:"13:00",type:"sell",sym:"XAUUSD",lots:0.03,eP:4822.000,cP:4821.240,pnl:2.28,  comm:-0.42,exit:"user",psych:3,tv:"",notes:""},
+  {id:1338453242,date:"2026-05-29",eT:"08:00",cT:"08:30",type:"sell",sym:"XAUUSD",lots:0.01,eP:4810.000,cP:4808.000,pnl:2.00,  comm:-0.07,exit:"user",psych:4,tv:"",notes:""},
+  {id:1338461237,date:"2026-05-29",eT:"09:05",cT:"10:00",type:"sell",sym:"XAUUSD",lots:0.02,eP:4810.000,cP:4807.500,pnl:5.00,  comm:-0.14,exit:"user",psych:4,tv:"",notes:""},
+  {id:1338461501,date:"2026-05-29",eT:"10:10",cT:"11:00",type:"buy", sym:"XAUUSD",lots:0.03,eP:4808.000,cP:4809.000,pnl:3.00,  comm:-0.21,exit:"user",psych:4,tv:"",notes:""},
+  {id:1338461900,date:"2026-05-29",eT:"11:35",cT:"12:10",type:"buy", sym:"XAUUSD",lots:0.01,eP:4808.000,cP:4808.570,pnl:0.57,  comm:-0.35,exit:"user",psych:3,tv:"",notes:""},
+];
+const PSYCH={1:{e:"😤",l:"Emotional"},2:{e:"😟",l:"Uncertain"},3:{e:"😐",l:"Neutral"},4:{e:"🙂",l:"Confident"},5:{e:"🧘",l:"In the Zone"}};
+const SYMS=["XAUUSD","GBPJPY","EURUSD","USDJPY","BTCUSD","GBPUSD","AUDUSD"];
+const DEFSETT={name:"My Trading Account",sym:"XAUUSD",lots:"0.01",cur:"USD",tz:"UTC",lossLim:"50",maxTrades:"10",defComm:"-0.07",showPsych:true,confirmDel:true};
+
+// ── State ────────────────────────────────────────────────────────────────────
+let state={
+  trades:[...SEED],
+  tab:"overview",
+  filterDate:"",
+  settings:{...DEFSETT},
+  tvUrl:null,
+  delTarget:null,
+  expandedRow:null,
+  addForm:null,
+  aiText:null,
+  aiLoading:false,
+  rangeFrom:"2026-05-06",rangeTo:"2026-05-29",
+  rangeAi:null,rangeAiLoading:false,
+  importMsg:null,
+  binKey:localStorage.getItem("tj_bin_key")||"",
+  binId:localStorage.getItem("tj_bin_id")||"",
+  syncStatus:null,
+  syncMsg:"",
+  lastSync:localStorage.getItem("tj_last_sync")||"",
+};
+
+function setState(patch){Object.assign(state,patch);render();}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const f$=n=>(n>=0?"+":"")+n.toFixed(2);
+const net=t=>t.pnl+(t.comm||0);
+const col=v=>v>=0?"#4ADE80":"#F87171";
+
+function calcStats(trades){
+  const nets=trades.map(net);
+  const total=nets.reduce((a,b)=>a+b,0);
+  const wins=nets.filter(n=>n>0),losses=nets.filter(n=>n<0);
+  const aw=wins.length?wins.reduce((a,b)=>a+b,0)/wins.length:0;
+  const al=losses.length?Math.abs(losses.reduce((a,b)=>a+b,0)/losses.length):0;
+  const comm=trades.reduce((a,t)=>a+(t.comm||0),0);
+  const psych=trades.length?trades.reduce((a,t)=>a+(t.psych||3),0)/trades.length:0;
+  const cg=trades.filter(t=>t.psych>=4);
+  const cwr=cg.length?(cg.filter(t=>net(t)>0).length/cg.length)*100:0;
+  return{total,wr:trades.length?(wins.length/trades.length)*100:0,wins:wins.length,losses:losses.length,n:trades.length,aw,al,rr:al?aw/al:0,comm,psych,cwr};
+}
+
+function buildCurve(trades){
+  const b={};
+  [...trades].sort((a,c)=>a.date.localeCompare(c.date)).forEach(t=>{if(!b[t.date])b[t.date]=0;b[t.date]+=net(t);});
+  let c=0;
+  return Object.entries(b).map(([d,n])=>{c+=n;return{date:d.slice(5),daily:parseFloat(n.toFixed(2)),cum:parseFloat(c.toFixed(2))};});
+}
+
+function blankForm(){
+  const now=new Date(),s=state.settings;
+  return{date:now.toISOString().slice(0,10),eT:now.toTimeString().slice(0,5),cT:now.toTimeString().slice(0,5),type:"buy",sym:s.sym,lots:s.lots,eP:"",cP:"",comm:s.defComm,exit:"user",psych:3,tv:"",notes:""};
+}
+
+// ── SVG Charts ───────────────────────────────────────────────────────────────
+function lineChart(data,xKey,yKey,color,h){
+  if(!data.length)return"";
+  const W=360,H=h||140,PL=36,PR=8,PT=8,PB=24;
+  const cw=W-PL-PR,ch=H-PT-PB;
+  const ys=data.map(d=>d[yKey]);
+  const mn=Math.min(...ys),mx=Math.max(...ys);
+  const rng=mx-mn||1;
+  const px=(i)=>PL+i*(cw/(data.length-1||1));
+  const py=(v)=>PT+ch-(((v-mn)/rng)*ch);
+  const pts=data.map((d,i)=>px(i)+","+py(d[yKey])).join(" ");
+  const zerY=py(0);
+  // y-axis ticks
+  const ticks=4;
+  const tickVals=Array.from({length:ticks+1},(_,i)=>mn+(rng/ticks)*i);
+  let svgTicks="",svgGrid="";
+  tickVals.forEach(v=>{
+    const y=py(v);
+    svgTicks+=`<text x="${PL-4}" y="${y+4}" text-anchor="end" fill="#8B949E" font-size="9">${v>=0?"+":""+(v.toFixed(0))}</text>`;
+    svgGrid+=`<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="#21262D" stroke-width="0.5"/>`;
+  });
+  // x-axis labels (show ~5)
+  let svgXlbls="";
+  const step=Math.max(1,Math.floor(data.length/5));
+  data.forEach((d,i)=>{if(i%step===0||i===data.length-1)svgXlbls+=`<text x="${px(i)}" y="${H-PB+14}" text-anchor="middle" fill="#8B949E" font-size="9">${d[xKey]}</text>`;});
+  return`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px">
+    ${svgGrid}
+    <line x1="${PL}" y1="${zerY}" x2="${W-PR}" y2="${zerY}" stroke="#30363D" stroke-dasharray="3,3" stroke-width="1"/>
+    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>
+    ${data.map((d,i)=>`<circle cx="${px(i)}" cy="${py(d[yKey])}" r="3" fill="${color}"/>`).join("")}
+    ${svgTicks}${svgXlbls}
+  </svg>`;
+}
+
+function barChart(data,xKey,yKey,h){
+  if(!data.length)return"";
+  const W=360,H=h||130,PL=36,PR=8,PT=8,PB=24;
+  const cw=W-PL-PR,ch=H-PT-PB;
+  const ys=data.map(d=>d[yKey]);
+  const mn=Math.min(0,Math.min(...ys)),mx=Math.max(0,Math.max(...ys));
+  const rng=mx-mn||1;
+  const bw=Math.max(2,(cw/data.length)-2);
+  const py=(v)=>PT+ch-(((v-mn)/rng)*ch);
+  const zerY=py(0);
+  const tickVals=[-1,-.5,0,.5,1].map(f=>mn+rng*(f+1)/2).filter(v=>v>=mn&&v<=mx);
+  let svgTicks="",svgBars="";
+  tickVals.forEach(v=>{const y=py(v);svgTicks+=`<text x="${PL-4}" y="${y+4}" text-anchor="end" fill="#8B949E" font-size="9">${v.toFixed(0)}</text>`;});
+  data.forEach((d,i)=>{
+    const x=PL+i*(cw/data.length)+1;
+    const v=d[yKey],yTop=py(Math.max(0,v)),yBot=py(Math.min(0,v));
+    const bh=Math.max(1,yBot-yTop);
+    svgBars+=`<rect x="${x}" y="${yTop}" width="${bw}" height="${bh}" fill="${v>=0?"#4ADE80":"#F87171"}" rx="2"/>`;
+  });
+  let svgXlbls="";
+  const step=Math.max(1,Math.floor(data.length/5));
+  data.forEach((d,i)=>{if(i%step===0)svgXlbls+=`<text x="${PL+i*(cw/data.length)+bw/2+1}" y="${H-PB+14}" text-anchor="middle" fill="#8B949E" font-size="9">${d[xKey]}</text>`;});
+  return`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px">
+    <line x1="${PL}" y1="${zerY}" x2="${W-PR}" y2="${zerY}" stroke="#30363D" stroke-width="1"/>
+    ${svgBars}${svgTicks}${svgXlbls}
+  </svg>`;
+}
+
+function psychBarChart(data){
+  const W=360,H=160,PL=36,PR=8,PT=8,PB=24;
+  const cw=W-PL-PR,ch=H-PT-PB;
+  const ys=data.map(d=>d.avg);
+  const mn=Math.min(0,Math.min(...ys)),mx=Math.max(0,Math.max(...ys));
+  const rng=mx-mn||1;
+  const bw=(cw/data.length)-6;
+  const py=(v)=>PT+ch-(((v-mn)/rng)*ch);
+  const zerY=py(0);
+  let svgBars="",svgXlbls="";
+  data.forEach((d,i)=>{
+    const x=PL+i*(cw/data.length)+3;
+    const v=d.avg,yTop=py(Math.max(0,v)),yBot=py(Math.min(0,v));
+    const bh=Math.max(1,yBot-yTop);
+    svgBars+=`<rect x="${x}" y="${yTop}" width="${bw}" height="${bh}" fill="${v>=0?"#4ADE80":"#F87171"}" rx="3"/>`;
+    svgXlbls+=`<text x="${x+bw/2}" y="${H-PB+14}" text-anchor="middle" fill="#C9D1D9" font-size="11">${d.label}</text>`;
+  });
+  const tickVals=3;
+  let svgTicks="";
+  for(let i=0;i<=tickVals;i++){const v=mn+(rng/tickVals)*i;const y=py(v);svgTicks+=`<text x="${PL-4}" y="${y+4}" text-anchor="end" fill="#8B949E" font-size="9">${v.toFixed(1)}</text>`;}
+  return`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px">
+    <line x1="${PL}" y1="${zerY}" x2="${W-PR}" y2="${zerY}" stroke="#30363D" stroke-width="1"/>
+    ${svgBars}${svgTicks}${svgXlbls}
+  </svg>`;
+}
+
+// ── AI Call ──────────────────────────────────────────────────────────────────
+async function callAI(prompt,onResult,onLoading){
+  onLoading(true);
+  try{
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:prompt}]})});
+    const d=await r.json();
+    onResult(d.content?.map(b=>b.text||"").join("")||"No response");
+  }catch{onResult("AI analysis failed — check your internet connection.");}
+  onLoading(false);
+}
+
+// ── HTML builders ────────────────────────────────────────────────────────────
+function h(tag,attrs,inner){
+  const a=Object.entries(attrs||{}).map(([k,v])=>{
+    if(k==="style"&&typeof v==="object")return` style="${Object.entries(v).map(([p,q])=>p.replace(/[A-Z]/g,m=>"-"+m.toLowerCase())+":"+q).join(";")}"`;
+    if(k==="className")return` class="${v}"`;
+    if(k.startsWith("on"))return"";// events handled separately
+    return` ${k}="${v}"`;
+  }).join("");
+  const self=["input","br","hr"].includes(tag);
+  return self?`<${tag}${a}/>`:`<${tag}${a}>${inner||""}</${tag}>`;
+}
+
+function statCard(label,value,sub,color){
+  return`<div class="card"><div class="card-label">${label}</div><div class="card-val" style="color:${color||"#C9D1D9"}">${value}</div>${sub?`<div class="card-sub">${sub}</div>`:""}</div>`;
+}
+
+function badge(txt,color,bg){
+  return`<span class="badge" style="background:${bg||color+"22"};color:${color}">${txt}</span>`;
+}
+
+function psychStars(rating,id){
+  const labels=["","😤 Emotional","😟 Uncertain","😐 Neutral","🙂 Confident","🧘 In the Zone"];
+  const stars=[1,2,3,4,5].map(n=>`<button class="psych-btn" onclick="setPsych('${id}',${n})" style="opacity:${n<=rating?1:.25};filter:${n<=rating?"none":"grayscale(1)"}" title="${n}"">⬡</button>`).join("");
+  const lbl=rating?`<span style="font-size:12px;color:${rating>=4?"#4ADE80":rating<=2?"#F87171":"#F0B429"};margin-left:6px">${labels[rating]}</span>`:"";
+  return`<div class="psych-stars">${stars}${lbl}</div>`;
+}
+
+function toggle(label,key,val){
+  return`<div class="toggle-wrap"><span style="color:#C9D1D9;font-size:13px">${label}</span><div class="toggle" style="background:${val?"#F0B429":"#30363D"}" onclick="toggleSetting('${key}')"><div class="toggle-dot" style="left:${val?22:3}px"></div></div></div>`;
+}
+
+function selOpts(opts,val){return opts.map(o=>typeof o==="string"?`<option${val===o?" selected":""}>${o}</option>`:`<option value="${o.v}"${val===o.v?" selected":""}>${o.l}</option>`).join("");}
+
+function inpField(lbl,id,type,val,extra=""){
+  return`<div><label class="lbl">${lbl}</label><input type="${type}" class="inp" id="${id}" value="${val||""}" ${extra} oninput="formChange('${id}',this.value)"/></div>`;
+}
+
+function selField(lbl,id,opts,val){
+  return`<div><label class="lbl">${lbl}</label><select class="inp" id="${id}" onchange="formChange('${id}',this.value)">${selOpts(opts,val)}</select></div>`;
+}
+
+// ── Views ─────────────────────────────────────────────────────────────────────
+function viewOverview(){
+  const {trades}=state;
+  const st=calcStats(trades);
+  const curve=buildCurve(trades);
+  return`
+    <div class="panel">
+      <div class="panel-title">Cumulative Equity</div>
+      <div class="chart-wrap">${lineChart(curve,"date","cum","#F0B429",160)}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="panel">
+        <div class="panel-title">Daily P&L</div>
+        <div class="chart-wrap">${barChart(curve,"date","daily",130)}</div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Breakdown</div>
+        ${[["Trades",st.n],["Winning",st.wins+" ("+st.wr.toFixed(0)+"%)"],["Losing",st.losses],["Best Day","$"+Math.max(...curve.map(d=>d.daily)).toFixed(2)],["Worst Day","$"+Math.min(...curve.map(d=>d.daily)).toFixed(2)],["Commissions","$"+Math.abs(st.comm).toFixed(2)],["Avg Psych",st.psych.toFixed(1)+"/5"]]
+          .map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #21262D"><span style="color:#8B949E;font-size:13px">${k}</span><span style="font-family:monospace;font-size:13px">${v}</span></div>`).join("")}
+      </div>
+    </div>`;
+}
+
+function viewPsych(){
+  const {trades}=state;
+  const groups={1:[],2:[],3:[],4:[],5:[]};
+  trades.forEach(t=>groups[t.psych]?.push(net(t)));
+  const pd=[1,2,3,4,5].map(r=>({label:PSYCH[r].e+" "+r,avg:groups[r].length?(groups[r].reduce((a,b)=>a+b,0)/groups[r].length):0,count:groups[r].length}));
+  const cards=[1,2,3,4,5].map(r=>{
+    const g=trades.filter(t=>t.psych===r),nets=g.map(net),tot=nets.reduce((a,b)=>a+b,0),wi=nets.filter(n=>n>0).length,p=PSYCH[r];
+    return`<div class="panel" style="margin-bottom:0"><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-size:20px">${p.e}</span><div><div style="font-weight:700">${r}/5 — ${p.l}</div><div style="color:#8B949E;font-size:11px">${g.length} trades</div></div></div>
+      ${[["Total",f$(tot)],["Win Rate",g.length?(((wi/g.length)*100).toFixed(0)+"%"):"—"],["Avg/Trade",g.length?f$(tot/g.length):"—"]].map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #21262D"><span style="color:#8B949E;font-size:12px">${k}</span><span style="font-family:monospace;font-size:12px;color:${col(tot)}">${v}</span></div>`).join("")}
+    </div>`;
+  }).join("");
+  return`<div class="panel"><div class="panel-title">Avg Net P&L by Psychology Rating</div><div class="chart-wrap">${psychBarChart(pd)}</div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${cards}</div>`;
+}
+
+function viewRange(){
+  const {trades,rangeFrom,rangeTo,rangeAi,rangeAiLoading}=state;
+  const fil=trades.filter(t=>(!rangeFrom||t.date>=rangeFrom)&&(!rangeTo||t.date<=rangeTo));
+  const st=calcStats(fil);
+  const curve=buildCurve(fil);
+  const presets=[["All","2026-05-06","2026-05-29"],["Wk1","2026-05-06","2026-05-08"],["Wk2","2026-05-11","2026-05-15"],["Wk3","2026-05-19","2026-05-22"],["Wk4","2026-05-25","2026-05-29"]];
+  const pBtns=presets.map(([l,f,t])=>`<button onclick="setRange('${f}','${t}')" style="padding:5px 10px;font-size:11px;font-weight:600;border-radius:5px;cursor:pointer;border:1px solid ${rangeFrom===f&&rangeTo===t?"#F0B429":"#30363D"};background:${rangeFrom===f&&rangeTo===t?"#F0B429":"transparent"};color:${rangeFrom===f&&rangeTo===t?"#0D1117":"#8B949E"}">${l}</button>`).join("");
+  const statsHtml=fil.length?`
+    <div class="cards">
+      ${statCard("Net P&L",f$(st.total),null,col(st.total))}
+      ${statCard("Win Rate",st.wr.toFixed(0)+"%",st.wins+"W/"+st.losses+"L")}
+      ${statCard("Avg Win",f$(st.aw),null,"#F0B429")}
+      ${statCard("Avg Loss",f$(-st.al),null,"#F87171")}
+      ${statCard("R:R",st.rr.toFixed(2)+"x")}
+      ${statCard("Avg Psych",st.psych.toFixed(1)+"/5",null,"#F0B429")}
+    </div>
+    ${curve.length>1?`<div class="panel"><div class="panel-title">Range Equity Curve</div><div class="chart-wrap">${lineChart(curve,"date","cum","#F0B429",130)}</div></div>`:""}
+    <button class="btn-o" style="width:100%;padding:11px;font-size:13px;font-weight:700;margin-bottom:10px" onclick="doRangeAI()" ${rangeAiLoading?"disabled":""}>
+      ${rangeAiLoading?"⟳ Generating…":"⚡ AI Performance Report for Range"}
+    </button>
+    ${rangeAi?`<div class="ai-box"><div class="ai-title">⚡ AI Report · ${rangeFrom} → ${rangeTo}</div><div class="ai-text">${rangeAi}</div></div>`:""}
+  `:"<p style='color:#8B949E;font-size:13px'>No trades in this range.</p>";
+
+  return`<div class="panel">
+    <div class="panel-title">📅 Select Date Range</div>
+    <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px">
+      <div><label class="lbl">From</label><input type="date" class="inp" style="width:auto" value="${rangeFrom}" onchange="setState({rangeFrom:this.value,rangeAi:null})"/></div>
+      <span style="color:#555E6D;font-size:18px;margin-bottom:6px">→</span>
+      <div><label class="lbl">To</label><input type="date" class="inp" style="width:auto" value="${rangeTo}" onchange="setState({rangeTo:this.value,rangeAi:null})"/></div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${pBtns}</div>
+    <div style="color:#8B949E;font-size:12px">${fil.length} trades in range</div>
+  </div>
+  ${statsHtml}`;
+}
+
+function viewLog(){
+  const {trades,filterDate,settings,expandedRow}=state;
+  let disp=[...trades].filter(t=>!filterDate||t.date===filterDate).sort((a,b)=>b.date.localeCompare(a.date)||b.eT.localeCompare(a.eT));
+  const headers=["Date/Time","Dir","Symbol","Lots","Entry","Exit","Net P&L","Exit",...(settings.showPsych?["Psych"]:[]),"Chart","Del",""];
+  const rows=disp.map(t=>{
+    const n=net(t),pi=PSYCH[t.psych]||PSYCH[3];
+    const isExp=expandedRow===t.id;
+    const exitBadge=t.exit==="tp"?badge("TP","#4ADE80"):t.exit==="sl"?badge("SL","#F87171"):badge("MNL","#8B949E");
+    const expContent=isExp?`<tr class="exp-row"><td class="exp-cell" colspan="${headers.length}">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+        <div><div style="color:#8B949E;font-size:10px;text-transform:uppercase;margin-bottom:6px">Psychology</div>${psychStars(t.psych,"")}</div>
+        <div><div style="color:#8B949E;font-size:10px;text-transform:uppercase;margin-bottom:6px">TradingView</div>${t.tv?`<button class="btn-o" style="padding:5px 12px;font-size:12px" onclick="openTV('${t.tv}')">📊 Preview</button> <a href="${t.tv}" target="_blank" style="color:#555E6D;font-size:11px">↗ Open</a>`:"<span style='color:#555E6D;font-size:12px'>No chart</span>"}</div>
+        <div><div style="color:#8B949E;font-size:10px;text-transform:uppercase;margin-bottom:6px">Notes</div><div style="font-size:12px;color:#C9D1D9;line-height:1.5">${t.notes||"<span style='color:#555E6D'>—</span>"}</div></div>
+      </div>
+    </td></tr>`:"";
+    return`<tr class="trow" onclick="toggleRow(${t.id})" style="border-bottom:${isExp?"none":"1px solid #21262D"}">
+      <td style="font-family:monospace;font-size:11px;color:#8B949E;white-space:nowrap"><div>${t.date}</div><div style="color:#555E6D;font-size:10px">${t.eT} → ${t.cT}</div></td>
+      <td>${badge(t.type.toUpperCase(),t.type==="buy"?"#4ADE80":"#F87171")}</td>
+      <td style="color:#F0B429;font-family:monospace;font-weight:600">${t.sym}</td>
+      <td style="font-family:monospace;font-size:12px">${t.lots}</td>
+      <td style="font-family:monospace;font-size:12px">${parseFloat(t.eP).toFixed(3)}</td>
+      <td style="font-family:monospace;font-size:12px">${parseFloat(t.cP).toFixed(3)}</td>
+      <td style="font-family:monospace;font-weight:700;color:${col(n)}">${f$(n)}</td>
+      <td>${exitBadge}</td>
+      ${settings.showPsych?`<td style="font-size:14px" title="${t.psych}/5 — ${pi.l}">${pi.e}</td>`:""}
+      <td onclick="event.stopPropagation()">${t.tv?`<button onclick="openTV('${t.tv}')" style="background:rgba(240,180,41,.1);border:1px solid rgba(240,180,41,.3);color:#F0B429;border-radius:5px;padding:3px 8px;font-size:11px;cursor:pointer;font-weight:600">📊</button>`:"<span style='color:#30363D'>—</span>"}</td>
+      <td onclick="event.stopPropagation()"><button onclick="delReq(${t.id})" style="background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);color:#F87171;border-radius:5px;padding:3px 8px;font-size:11px;cursor:pointer">🗑</button></td>
+      <td style="color:#555E6D;font-size:11px">${isExp?"▲":"▼"}</td>
+    </tr>${expContent}`;
+  }).join("");
+
+  const dayTotal=filterDate?disp.reduce((a,t)=>a+net(t),0):null;
+  return`<div class="panel" style="padding:0;overflow:hidden">
+    <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #21262D;flex-wrap:wrap;gap:8px">
+      <div style="color:#8B949E;font-size:11px;text-transform:uppercase">${filterDate?"Trades on "+filterDate:"All "+trades.length+" Trades"} <span style="color:#555E6D">· tap row · 📊 · 🗑</span></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        ${filterDate?`<button onclick="setState({filterDate:''})" style="background:transparent;border:1px solid #30363D;color:#8B949E;border-radius:5px;padding:5px 10px;font-size:11px;cursor:pointer">Clear</button>`:""}
+        <input type="date" class="inp" style="width:auto" value="${filterDate}" onchange="setState({filterDate:this.value})"/>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>
+    </div>
+    ${dayTotal!==null&&disp.length?`<div style="padding:10px 16px;border-top:1px solid #21262D;display:flex;gap:16px;align-items:center"><span style="color:#8B949E;font-size:12px">Day total:</span><span style="font-family:monospace;font-weight:700;color:${col(dayTotal)}">${f$(dayTotal)}</span><span style="color:#8B949E;font-size:12px">Trades: ${disp.length}</span></div>`:""}
+  </div>`;
+}
+
+function viewAdd(){
+  const f=state.addForm||(state.addForm=blankForm(),state.addForm);
+  const {aiText,aiLoading}=state;
+  const pnl=(()=>{const op=parseFloat(f.eP),cl=parseFloat(f.cP),lo=parseFloat(f.lots);if(isNaN(op)||isNaN(cl)||isNaN(lo))return null;const pv=f.sym==="XAUUSD"?100:f.sym==="GBPJPY"?0.076:10;return(f.type==="buy"?1:-1)*(cl-op)*lo*pv;})();
+  const netVal=pnl!==null?pnl+(parseFloat(f.comm)||0):null;
+  return`<div class="panel">
+    <div class="panel-title">+ LOG NEW TRADE</div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr));margin-bottom:12px">
+      ${inpField("Date","f_date","date",f.date)}
+      ${inpField("Entry Time","f_eT","time",f.eT)}
+      ${inpField("Close Time","f_cT","time",f.cT)}
+      ${selField("Symbol","f_sym",SYMS,f.sym)}
+      ${selField("Direction","f_type",[{v:"buy",l:"BUY"},{v:"sell",l:"SELL"}],f.type)}
+      ${inpField("Lots","f_lots","number",f.lots,"step='0.01'")}
+      ${inpField("Entry Price","f_eP","number",f.eP,"step='0.001' placeholder='4800.000'")}
+      ${inpField("Exit Price","f_cP","number",f.cP,"step='0.001' placeholder='4805.000'")}
+      ${inpField("Commission","f_comm","number",f.comm,"step='0.01'")}
+      ${selField("Closed By","f_exit",[{v:"user",l:"Manual"},{v:"tp",l:"Take Profit"},{v:"sl",l:"Stop Loss"}],f.exit)}
+    </div>
+    <div style="margin-bottom:12px"><label class="lbl">Psychology Rating</label><div style="background:#0D1117;border:1px solid #30363D;border-radius:6px;padding:10px 12px">${psychStars(f.psych,"form")}</div></div>
+    <div style="margin-bottom:12px"><label class="lbl">TradingView Chart Link</label><input type="url" class="inp" id="f_tv" value="${f.tv||""}" placeholder="https://www.tradingview.com/chart/..." oninput="formChange('f_tv',this.value)"/></div>
+    <div style="margin-bottom:12px"><label class="lbl">Notes</label><textarea class="inp" rows="2" style="resize:vertical" id="f_notes" oninput="formChange('f_notes',this.value)">${f.notes||""}</textarea></div>
+    ${pnl!==null?`<div style="padding:10px 12px;background:#0D1117;border-radius:6px;display:flex;gap:18px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+      <span style="color:#8B949E;font-size:12px">Gross:</span><span style="font-family:monospace;font-weight:700;font-size:16px;color:${col(pnl)}">${f$(pnl)}</span>
+      <span style="color:#8B949E;font-size:12px">Net:</span><span style="font-family:monospace;font-weight:700;font-size:16px;color:${col(netVal)}">${f$(netVal)}</span>
+    </div>`:""}
+    ${aiLoading?`<div style="background:#161B22;border:1px solid #30363D;border-radius:8px;padding:18px;margin-top:12px;color:#8B949E">⟳ Analysing…</div>`:""}
+    ${aiText&&!aiLoading?`<div class="ai-box"><div class="ai-title">⚡ AI Analysis</div><div class="ai-text">${aiText}</div></div>`:""}
+    <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+      <button class="btn-o" onclick="doAnalyse()" ${aiLoading||!f.eP||!f.cP||!f.lots?"disabled":""} style="opacity:${!f.eP||!f.cP||!f.lots?.4:1}">${aiLoading?"Analysing…":"⚡ Analyse with AI"}</button>
+      <button class="btn" onclick="saveTrade()" ${!f.date||!f.eP||!f.cP||!f.lots?"disabled":""} style="opacity:${!f.date||!f.eP||!f.cP||!f.lots?.4:1}">Save Trade</button>
+    </div>
+  </div>`;
+}
+
+function viewSettings(){
+  const {settings,trades,importMsg,binKey,binId,syncStatus,syncMsg,lastSync}=state;
+  return`<div class="panel"><div class="panel-title">⚙️ Account</div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
+      <div><label class="lbl">Trader Name</label><input class="inp" value="${settings.name}" oninput="setSetting('name',this.value)"/></div>
+      <div><label class="lbl">Currency</label><select class="inp" onchange="setSetting('cur',this.value)">${selOpts(["USD","EUR","GBP","AUD","JPY"],settings.cur)}</select></div>
+      <div><label class="lbl">Timezone</label><select class="inp" onchange="setSetting('tz',this.value)">${selOpts(["UTC","EST","CST","PST","GMT","CET","WAT"],settings.tz)}</select></div>
+    </div></div>
+  <div class="panel"><div class="panel-title">📝 Trade Defaults</div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
+      <div><label class="lbl">Default Symbol</label><select class="inp" onchange="setSetting('sym',this.value)">${selOpts(SYMS,settings.sym)}</select></div>
+      <div><label class="lbl">Default Lots</label><input type="number" step="0.01" class="inp" value="${settings.lots}" oninput="setSetting('lots',this.value)"/></div>
+      <div><label class="lbl">Default Commission</label><input type="number" step="0.01" class="inp" value="${settings.defComm}" oninput="setSetting('defComm',this.value)"/></div>
+    </div></div>
+  <div class="panel"><div class="panel-title">🛡 Risk Rules</div>
+    <div class="grid" style="grid-template-columns:1fr 1fr">
+      <div><label class="lbl">Daily Loss Limit ($)</label><input type="number" class="inp" value="${settings.lossLim}" oninput="setSetting('lossLim',this.value)"/></div>
+      <div><label class="lbl">Max Trades / Day</label><input type="number" class="inp" value="${settings.maxTrades}" oninput="setSetting('maxTrades',this.value)"/></div>
+    </div></div>
+  <div class="panel"><div class="panel-title">🎨 Display</div>
+    ${toggle("Show Psychology Column in Log","showPsych",settings.showPsych)}
+    ${toggle("Confirm before deleting trades","confirmDel",settings.confirmDel)}
+  </div>
+  <div class="panel"><div class="panel-title">☁️ Cloud Sync</div>
+    <div style="color:#8B949E;font-size:12px;line-height:1.6;margin-bottom:12px">Free cloud backup via JSONBin.io — no deployment needed. <a href="#" onclick="showSheetInstructions()" style="color:#F0B429">How to get an API key ↗</a></div>
+    <div style="margin-bottom:12px">
+      <label class="lbl">JSONBin API Key (X-Master-Key)</label>
+      <input class="inp" type="password" id="bin_key" value="${binKey}" placeholder="$2a$10$..." oninput="setBinKey(this.value)"/>
+    </div>
+    ${binKey?`<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+      <button class="btn" onclick="doCloudSave()" ${syncStatus==="syncing"?"disabled":""}>☁️ Save to Cloud</button>
+      <button class="btn-o" onclick="doCloudLoad()" ${syncStatus==="syncing"?"disabled":""}>⬇ Load from Cloud</button>
+    </div>`:""}
+    ${syncStatus==="syncing"?`<div style="color:#F0B429;font-size:13px;margin-top:8px">⟳ Syncing…</div>`:""}
+    ${syncStatus==="ok"?`<div style="color:#4ADE80;font-size:13px;margin-top:8px">✓ ${syncMsg}</div>`:""}
+    ${syncStatus==="error"?`<div style="color:#F87171;font-size:13px;margin-top:8px">✗ ${syncMsg}</div>`:""}
+    ${lastSync?`<div style="color:#555E6D;font-size:11px;margin-top:6px">Last sync: ${lastSync}</div>`:""}
+    ${binId?`<div style="color:#555E6D;font-size:10px;margin-top:4px">Bin ID: ${binId}</div>`:""}
+  </div>
+  <div class="panel"><div class="panel-title">💾 Local Export / Import</div>
+    <div style="color:#8B949E;font-size:12px;line-height:1.6;margin-bottom:14px">Export saves all ${trades.length} trades + settings as a JSON file. Import loads a previously exported file.</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <button class="btn" onclick="doExport()">⬇ Export JSON</button>
+      <label class="btn-g" style="cursor:pointer">⬆ Import JSON<input type="file" accept=".json" style="display:none" onchange="doImport(this)"/></label>
+    </div>
+    ${importMsg?`<div style="margin-top:12px;padding:9px 12px;border-radius:6px;background:${importMsg.ok?"rgba(74,222,128,.08)":"rgba(248,113,113,.08)"};border:1px solid ${importMsg.ok?"#4ADE80":"#F87171"};color:${importMsg.ok?"#4ADE80":"#F87171"};font-size:13px">${importMsg.msg}</div>`:""}
+  </div>
+  <button class="btn-r" onclick="resetSettings()">Reset to Defaults</button>`;
+}
+
+function viewModals(){
+  const {tvUrl,delTarget,settings}=state;
+  let out="";
+  if(tvUrl){
+    out+=`<div class="modal-bg" onclick="setState({tvUrl:null})">
+      <div style="background:#161B22;border:1px solid #30363D;border-radius:12px;width:100%;max-width:860px;overflow:hidden" onclick="event.stopPropagation()">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #21262D">
+          <span style="color:#F0B429;font-weight:700;font-size:13px">📊 TradingView Chart</span>
+          <div style="display:flex;gap:10px;align-items:center">
+            <a href="${tvUrl}" target="_blank" style="color:#8B949E;font-size:12px;text-decoration:none;border:1px solid #30363D;border-radius:5px;padding:4px 10px">Open in TradingView ↗</a>
+            <button onclick="setState({tvUrl:null})" style="background:none;border:none;color:#8B949E;font-size:20px;cursor:pointer">✕</button>
+          </div>
+        </div>
+        <iframe src="${tvUrl}" style="width:100%;height:480px;border:none;display:block" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+      </div>
+    </div>`;
+  }
+  if(settings.confirmDel&&delTarget){
+    const n=net(delTarget);
+    out+=`<div class="modal-bg">
+      <div class="modal" style="border-color:#F87171">
+        <div style="color:#F87171;font-weight:700;font-size:16px;margin-bottom:12px">🗑 Delete Trade?</div>
+        <div style="color:#C9D1D9;font-size:13px;margin-bottom:6px">${delTarget.date} · ${delTarget.type.toUpperCase()} ${delTarget.sym} · ${delTarget.lots} lots</div>
+        <div style="font-family:monospace;font-weight:700;font-size:14px;margin-bottom:20px;color:${col(n)}">Net: ${f$(n)}</div>
+        <div style="display:flex;gap:10px">
+          <button class="btn" style="background:#F87171;flex:1" onclick="confirmDel()">Delete</button>
+          <button onclick="setState({delTarget:null})" style="background:transparent;border:1px solid #30363D;color:#C9D1D9;border-radius:6px;padding:9px 16px;font-size:13px;cursor:pointer;flex:1">Cancel</button>
+        </div>
+      </div>
+    </div>`;
+  }
+  return out;
+}
+
+// ── Main render ───────────────────────────────────────────────────────────────
+function render(){
+  const {tab,trades,settings}=state;
+  const st=calcStats(trades);
+  const TABS=[{id:"overview",l:"Overview"},{id:"psychology",l:"🧠 Psychology"},{id:"range",l:"📅 Range"},{id:"log",l:"Trade Log"},{id:"add",l:"+ Add"},{id:"settings",l:"⚙️ Settings"}];
+  const showCards=["overview","log","range"].includes(tab);
+
+  const html=`
+    ${viewModals()}
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px"><span style="font-size:20px">⬡</span><span style="color:#F0B429;font-size:18px;font-weight:700">${settings.name.toUpperCase()}</span></div>
+        <div style="color:#8B949E;font-size:11px;margin-top:2px">May 2026 · ${trades.length} trades · Avg Psych ${st.psych.toFixed(1)}/5${state.binKey?` · <span style="color:${state.syncStatus==='ok'?'#4ADE80':state.syncStatus==='error'?'#F87171':'#F0B429'}">☁️ ${state.syncStatus==='ok'?'Synced':state.syncStatus==='syncing'?'Syncing…':'Cloud linked'}</span>`:''}</div>
+      </div>
+    </div>
+    <div class="tabs">${TABS.map(t=>`<button class="tab${tab===t.id?" active":""}" onclick="setState({tab:'${t.id}'})">${t.l}</button>`).join("")}</div>
+    ${showCards?`<div class="cards">
+      ${statCard("Net P&L",f$(st.total),null,col(st.total))}
+      ${statCard("Commission",f$(st.comm),null,col(st.comm))}
+      ${statCard("Win Rate",st.wr.toFixed(0)+"%",st.wins+"W / "+st.losses+"L")}
+      ${statCard("Avg Win",f$(st.aw),null,"#F0B429")}
+      ${statCard("Avg Loss",f$(-st.al),null,"#F87171")}
+      ${statCard("R:R",st.rr.toFixed(2)+"x")}
+      ${statCard("Calm Win%",st.cwr.toFixed(0)+"%","psych 4–5","#F0B429")}
+    </div>`:""}
+    ${tab==="overview"?viewOverview():""}
+    ${tab==="psychology"?viewPsych():""}
+    ${tab==="range"?viewRange():""}
+    ${tab==="log"?viewLog():""}
+    ${tab==="add"?viewAdd():""}
+    ${tab==="settings"?viewSettings():""}
+  `;
+  document.getElementById("app").innerHTML=html;
+}
+
+// ── Event handlers ────────────────────────────────────────────────────────────
+function toggleRow(id){setState({expandedRow:state.expandedRow===id?null:id});}
+function openTV(url){setState({tvUrl:url});}
+function setRange(f,t){setState({rangeFrom:f,rangeTo:t,rangeAi:null});}
+function setSetting(k,v){state.settings[k]=v==="true"?true:v==="false"?false:v;render();}
+function toggleSetting(k){state.settings[k]=!state.settings[k];render();}
+function resetSettings(){setState({settings:{...DEFSETT}});}
+
+function formChange(id,val){
+  if(!state.addForm)state.addForm=blankForm();
+  const map={f_date:"date",f_eT:"eT",f_cT:"cT",f_type:"type",f_sym:"sym",f_lots:"lots",f_eP:"eP",f_cP:"cP",f_comm:"comm",f_exit:"exit",f_tv:"tv",f_notes:"notes"};
+  if(map[id])state.addForm[map[id]]=val;
+  render();
+}
+
+function setPsych(ctx,val){
+  if(ctx==="form"){if(!state.addForm)state.addForm=blankForm();state.addForm.psych=val;}
+  render();
+}
+
+function delReq(id){
+  const t=state.trades.find(x=>x.id===id);
+  if(!t)return;
+  if(!state.settings.confirmDel){state.trades=state.trades.filter(x=>x.id!==id);render();}
+  else setState({delTarget:t});
+}
+function confirmDel(){
+  if(state.delTarget)state.trades=state.trades.filter(x=>x.id!==state.delTarget.id);
+  setState({delTarget:null});
+}
+
+function calcFormPnl(f){
+  const op=parseFloat(f.eP),cl=parseFloat(f.cP),lo=parseFloat(f.lots);
+  if(isNaN(op)||isNaN(cl)||isNaN(lo))return 0;
+  const pv=f.sym==="XAUUSD"?100:f.sym==="GBPJPY"?0.076:10;
+  return(f.type==="buy"?1:-1)*(cl-op)*lo*pv;
+}
+
+function saveTrade(){
+  const f=state.addForm;
+  if(!f||!f.date||!f.eP||!f.cP||!f.lots)return;
+  const pnl=calcFormPnl(f);
+  state.trades.push({id:Date.now(),date:f.date,eT:f.eT,cT:f.cT,type:f.type,sym:f.sym,lots:parseFloat(f.lots),eP:parseFloat(f.eP),cP:parseFloat(f.cP),pnl,comm:parseFloat(f.comm)||0,exit:f.exit,psych:f.psych,tv:f.tv,notes:f.notes});
+  setState({tab:"log",addForm:null,aiText:null,expandedRow:null});
+}
+
+async function doAnalyse(){
+  const f=state.addForm;
+  if(!f||!f.eP||!f.cP||!f.lots)return;
+  const pnl=calcFormPnl(f);
+  const comm=parseFloat(f.comm)||0,netv=pnl+comm;
+  const pi=PSYCH[f.psych];
+  const prompt=`Trading coach review:\n${f.type.toUpperCase()} ${f.sym} ${f.lots} lots\n${f.date} ${f.eT}→${f.cT}\nEntry:${f.eP} Exit:${f.cP}\nGross:${pnl.toFixed(2)} Comm:${comm} Net:${netv.toFixed(2)}\nClosed:${f.exit} Psych:${f.psych}/5 ${pi.e} ${pi.l}\nNotes:${f.notes||"none"}\n\n4 bullet points: trade quality, timing, psychology impact, one improvement tip. Direct, $ amounts.`;
+  await callAI(prompt,r=>setState({aiText:r,aiLoading:false}),v=>setState({aiLoading:v}));
+}
+
+async function doRangeAI(){
+  const {trades,rangeFrom,rangeTo}=state;
+  const fil=trades.filter(t=>(!rangeFrom||t.date>=rangeFrom)&&(!rangeTo||t.date<=rangeTo));
+  if(!fil.length)return;
+  const st=calcStats(fil);
+  const top3l=[...fil].sort((a,b)=>net(a)-net(b)).slice(0,3).map(t=>t.date+" "+t.type+" $"+net(t).toFixed(2)+" p"+t.psych).join(", ");
+  const top3w=[...fil].sort((a,b)=>net(b)-net(a)).slice(0,3).map(t=>t.date+" "+t.type+" $"+net(t).toFixed(2)+" p"+t.psych).join(", ");
+  const prompt=`Professional trading analyst. Period ${rangeFrom} to ${rangeTo}.\n${st.n} trades | Net $${st.total.toFixed(2)} | WR ${st.wr.toFixed(0)}%\nAvg Win $${st.aw.toFixed(2)} | Avg Loss $${st.al.toFixed(2)} | R:R ${st.rr.toFixed(2)}x\nAvg Psych ${st.psych.toFixed(1)}/5 | Comms $${Math.abs(st.comm).toFixed(2)}\nTop losses: ${top3l}\nTop wins: ${top3w}\n\n1.Verdict 2.Key strength 3.Key weakness 4.Psychology pattern 5.One rule to implement. Direct.`;
+  await callAI(prompt,r=>setState({rangeAi:r,rangeAiLoading:false}),v=>setState({rangeAiLoading:v}));
+}
+
+function doExport(){
+  const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),settings:state.settings,trades:state.trades},null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");a.href=url;a.download="trade-journal-"+new Date().toISOString().slice(0,10)+".json";a.click();URL.revokeObjectURL(url);
+}
+
+function doImport(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      if(!d.trades||!Array.isArray(d.trades))throw new Error();
+      state.trades=d.trades;
+      if(d.settings)Object.assign(state.settings,d.settings);
+      setState({importMsg:{ok:true,msg:"✓ Imported "+d.trades.length+" trades successfully"}});
+    }catch{setState({importMsg:{ok:false,msg:"✗ Invalid file format"}});}
+  };reader.readAsText(file);
+}
+
+// ── Cloud Sync (JSONBin.io) ─────────────────────────────────────────────────
+const JSONBIN_BASE="https://api.jsonbin.io/v3/b";
+
+function setBinKey(v){
+  state.binKey=v.trim();
+  localStorage.setItem("tj_bin_key",state.binKey);
+  render();
+}
+
+async function doCloudSave(){
+  if(!state.binKey)return;
+  setState({syncStatus:"syncing",syncMsg:""});
+  const payload={trades:state.trades,settings:state.settings,savedAt:new Date().toISOString()};
+  try{
+    let res, d;
+    if(state.binId){
+      // Update existing bin
+      res=await fetch(JSONBIN_BASE+"/"+state.binId,{
+        method:"PUT",
+        headers:{"Content-Type":"application/json","X-Master-Key":state.binKey},
+        body:JSON.stringify(payload)
+      });
+      d=await res.json();
+      if(!res.ok)throw new Error(d.message||"Save failed");
+    }else{
+      // Create new bin
+      res=await fetch(JSONBIN_BASE,{
+        method:"POST",
+        headers:{"Content-Type":"application/json","X-Master-Key":state.binKey,"X-Bin-Name":"trade-journal"},
+        body:JSON.stringify(payload)
+      });
+      d=await res.json();
+      if(!res.ok)throw new Error(d.message||"Create failed");
+      state.binId=d.metadata.id;
+      localStorage.setItem("tj_bin_id",state.binId);
+    }
+    const ts=new Date().toLocaleString();
+    localStorage.setItem("tj_last_sync",ts);
+    setState({syncStatus:"ok",syncMsg:"Saved "+state.trades.length+" trades · "+ts,lastSync:ts});
+  }catch(err){
+    setState({syncStatus:"error",syncMsg:err.message||"Network error — check your API key"});
+  }
+}
+
+async function doCloudLoad(){
+  if(!state.binKey||!state.binId){
+    setState({syncStatus:"error",syncMsg:"No cloud data yet — tap 'Save to Cloud' first"});
+    return;
+  }
+  setState({syncStatus:"syncing",syncMsg:""});
+  try{
+    const res=await fetch(JSONBIN_BASE+"/"+state.binId+"/latest",{headers:{"X-Master-Key":state.binKey}});
+    const d=await res.json();
+    if(!res.ok)throw new Error(d.message||"Load failed");
+    const record=d.record;
+    if(record.trades&&record.trades.length)state.trades=record.trades;
+    if(record.settings&&Object.keys(record.settings).length)Object.assign(state.settings,record.settings);
+    const ts=new Date().toLocaleString();
+    localStorage.setItem("tj_last_sync",ts);
+    setState({syncStatus:"ok",syncMsg:"Loaded "+state.trades.length+" trades · "+ts,lastSync:ts});
+  }catch(err){
+    setState({syncStatus:"error",syncMsg:err.message||"Network error — check your API key"});
+  }
+}
+
+function showSheetInstructions(){
+  alert("GET YOUR FREE API KEY:\n\n1. Go to jsonbin.io and tap 'Sign Up' (free, takes 30 seconds)\n2. After logging in, go to your Dashboard\n3. Click 'API Keys' in the left menu\n4. Copy your 'X-Master-Key'\n5. Paste it into the field above\n6. Tap 'Save to Cloud'\n\nThat's it — your data now syncs across devices. Next time, just open this page and tap 'Load from Cloud'.");
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+// Auto-load from cloud if key + bin already saved
+if(state.binKey&&state.binId){
+  doCloudLoad().catch(()=>{});
+}
+render();
+</script>
+</body>
+</html>
